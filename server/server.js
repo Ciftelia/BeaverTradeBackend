@@ -9,16 +9,24 @@ app.use(express.json());
 
 // Routes
 // Get all names
-app.get('/name', async (req, res) => {
-  try {
-    const allNames = await pool.query('select name from firsttable;');
-    res.json(allNames.rows);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
-  }
+app.get('/search', (req, res) => {
+  const query = req.query.q?.toLowerCase() || '';
+
+  const sqlQuery = 'SELECT * FROM firsttable WHERE LOWER(name) LIKE $1';
+  const values = [`%${query}%`];
+
+  pool.query(sqlQuery, values, (err, dbRes) => {
+    if (err) {
+      console.error(err);
+      res.status(500).send('Internal Server Error');
+      return;
+    }
+    const data = dbRes.rows; // `dbRes.rows` contains the fetched data
+    res.json(data);
+  });
 });
 
-app.listen(4500, () => {
-  console.log('Server is running on port 4500');
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
